@@ -7,12 +7,11 @@ class SynthGUI:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Synth GUI")
-        self.root.geometry("380x920")  #Größe des GUI-Fensters
+        #self.root.geometry("380x920")  #Größe des GUI-Fensters
         #self.root.configure(background='white')
 
-
-        title = tk.Label(self.root, text="Einstellungen")
-        title.pack()
+        #title = tk.Label(self.root, text="Einstellungen")
+        #title.pack()
 
         self.inputs = {}  # Dictionary zum Speichern der Eingaben
 
@@ -21,6 +20,16 @@ class SynthGUI:
         self.create_slider("LFO Frequenz", 0.01, 25, 0.01)
         self.create_toggle_button("Oktave tiefer")
         self.create_slider("Lautstärke tieferer Oktave", 0, 1, 0.01)
+
+        w = tk.Label(self.root, text="Red Sun", bg="red", fg="white")
+        w.pack(side=tk.LEFT)
+
+        w = tk.Label(self.root, text="Green Grass", bg="green", fg="black")
+        w.pack(side=tk.LEFT)
+
+        w = tk.Label(self.root, text="Blue Sky", bg="blue", fg="white")
+        w.pack(side=tk.LEFT)
+
         self.create_slider("Attack", 0.001, 5, 0.001)
         self.create_slider("Decay", 0.05, 5, 0.05)
         self.create_slider("Release", 0.005, 5, 0.005)
@@ -70,10 +79,7 @@ class SynthGUI:
         self.mul_input = input_values["Multiplikator"]
 
         print(input_values)
-
         #self.root.destroy()
-
-
 
 ###############
 class Synth:
@@ -155,6 +161,7 @@ if __name__ == "__main__":
     s.boot()
 
     Gui_input = SynthGUI()
+    Gui_input.root.mainloop()
 
     # Create the midi synth.
     a1 = Synth()
