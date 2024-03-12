@@ -1,62 +1,84 @@
 from pyo import *
 from random import random
 import tkinter as tk
+from math import log10
 
 ##################
 class SynthGUI:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Synth GUI")
-        #self.root.geometry("380x920")  #Größe des GUI-Fensters
+        self.root.geometry("450x800")  #Größe des GUI-Fensters
         #self.root.configure(background='white')
 
-        #title = tk.Label(self.root, text="Einstellungen")
-        #title.pack()
+        # Container für Spalten-Frames
+        self.container = tk.Frame(self.root)
+        self.container.pack(fill=tk.BOTH, expand=True)
+
+        # Erstelle Frames für die zwei Spalten und den unteren Bereich
+        self.top_frame = tk.Frame(self.container, height=50)# optional bg='grey'
+        self.right_frame = tk.Frame(self.container)
+        self.left_frame = tk.Frame(self.container)
+        self.bottom_frame = tk.Frame(self.container, height=300)
+
+        # Einstellen des oberen Frames
+        self.top_frame.place(relx=0, rely=0, relwidth=1, relheight=0.05)  # Schmaler
+        self.left_frame.place(relx=0, rely=0.05, relwidth=0.5, relheight=0.675)
+        self.right_frame.place(relx=0.5, rely=0.05, relwidth=0.5, relheight=0.7)
+        self.bottom_frame.place(relx=0, rely=0.65, relwidth=1, relheight=0.4)
+
+        title = tk.Label(self.top_frame, text="Synth Einstellungen:")
+        title.pack(side=tk.TOP, expand=True)
 
         self.inputs = {}  # Dictionary zum Speichern der Eingaben
 
-        self.create_slider("Noise Lautstärke", 0, 1, 0.01)
-        self.create_toggle_button("LFO on")
-        self.create_slider("LFO Frequenz", 0.01, 25, 0.01)
-        self.create_toggle_button("Oktave tiefer")
-        self.create_slider("Lautstärke tieferer Oktave", 0, 1, 0.01)
+        self.create_slider("Noise Lautstärke", 0, 1, 0.01, self.right_frame)
+        self.create_toggle_button("LFO on", self.right_frame)
+        self.create_slider("LFO Frequenz", 0.01, 25, 0.01, self.right_frame)
+        self.create_toggle_button("Oktave tiefer", self.right_frame)
+        self.create_slider("Lautstärke tieferer Oktave", 0, 1, 0.01, self.right_frame)
+        self.create_slider("Attack", 0.001, 5, 0.001, self.left_frame)
+        self.create_slider("Decay", 0.05, 5, 0.05, self.left_frame)
+        self.create_slider("Release", 0.005, 5, 0.005, self.left_frame)
+        self.create_slider("Sustain", 0.5, 10, 0.1, self.left_frame)
+        self.create_slider("Volume Synth", 0, 1, 0.01, self.left_frame)
+        self.create_log_slider("LP Frequenz", 20000, 20)
+        self.create_log_slider("HP Frequenz", 20, 20000)
+        self.create_slider("Balance", 1, 0, 0.01, self.right_frame)
+        self.create_slider("Revtime", 0, 20, 0.1, self.right_frame)
+        self.create_log_slider("Cutoff", 1, 20000)
 
-        w = tk.Label(self.root, text="Red Sun", bg="red", fg="white")
-        w.pack(side=tk.LEFT)
 
-        w = tk.Label(self.root, text="Green Grass", bg="green", fg="black")
-        w.pack(side=tk.LEFT)
+        self.submit_button = tk.Button(self.bottom_frame, text="Eingabe", command=self.submit, bg="cyan", fg="#003C6E")
+        self.submit_button.pack(pady=(20, 0))  # 20 Pixel Platz oben, 0 Pixel unten
 
-        w = tk.Label(self.root, text="Blue Sky", bg="blue", fg="white")
-        w.pack(side=tk.LEFT)
-
-        self.create_slider("Attack", 0.001, 5, 0.001)
-        self.create_slider("Decay", 0.05, 5, 0.05)
-        self.create_slider("Release", 0.005, 5, 0.005)
-        self.create_slider("Sustain", 0.5, 10, 0.1)
-        self.create_slider("Multiplikator", 0, 1, 0.01)
-
-        # Weitere Eingabefelder hinzufügen bei Bedarf
-
-        self.submit_button = tk.Button(self.root, text="Eingabe", command=self.submit, bg="cyan", fg="#003C6E")
-        self.submit_button.pack()
-
-    def create_slider(self, label_text, min_value, max_value, res_value):
-        label = tk.Label(self.root, text=label_text)
+    def create_slider(self, label_text, min_value, max_value, res_value, frame):
+        label = tk.Label(frame, text=label_text)
         label.pack(pady=5)
 
-        slider = tk.Scale(self.root, from_=min_value, to=max_value, resolution=res_value, orient=tk.HORIZONTAL)
+        slider = tk.Scale(frame, from_=min_value, to=max_value, resolution=res_value, orient=tk.HORIZONTAL)
         slider.pack()
 
         self.inputs[label_text] = slider
 
-    def create_toggle_button(self, label_text):
-        label = tk.Label(self.root, text=label_text)
+    def create_log_slider(self, label_text, min_value, max_value):
+        label = tk.Label(self.bottom_frame, text=label_text)
+        label.pack(pady=5)
+
+
+        log_min = math.log10(min_value)
+        log_max = math.log10(max_value)
+        log_slider = LogScale(self.bottom_frame, min_value=log_min, max_value=log_max)
+        log_slider.pack()
+        self.inputs[label_text] = log_slider
+
+    def create_toggle_button(self, label_text, frame):
+        label = tk.Label(frame, text=label_text)
         label.pack(pady=5)
 
         var = tk.IntVar()
 
-        toggle_button = tk.Checkbutton(self.root, text="", variable=var)
+        toggle_button = tk.Checkbutton(frame, text="", variable=var)
         toggle_button.pack()
 
         self.inputs[label_text] = var
@@ -65,7 +87,10 @@ class SynthGUI:
         input_values = {}
 
         for label_text, entry in self.inputs.items():
-            input_values[label_text] = entry.get()
+            if isinstance(entry, LogScale):
+                input_values[label_text] = entry.value
+            else:
+                input_values[label_text] = entry.get()
 
         self.noiseamp_input = input_values["Noise Lautstärke"]
         self.lfo_active_input = input_values["LFO on"]
@@ -76,10 +101,104 @@ class SynthGUI:
         self.decay_input = input_values["Decay"]
         self.release_input = input_values["Release"]
         self.sustain_input = input_values["Sustain"]
-        self.mul_input = input_values["Multiplikator"]
+        self.mul_input = input_values["Volume Synth"]
+        self.lp_freq_input = input_values["LP Frequenz"]
+        self.hp_freq_input = input_values["HP Frequenz"]
+        self.bal_input = input_values["Balance"]
 
         print(input_values)
         #self.root.destroy()
+
+
+class LogScale(tk.Canvas):
+    def __init__(self, master, min_value=0, max_value=1, **kwargs):
+        self.min_value = min_value
+        self.max_value = max_value
+        self.min = min_value  # For calculation in on_drag
+        self.max = max_value  # For calculation in on_drag
+        self.value = 10 ** min_value  # Initialisiert value mit einem sicheren Wert innerhalb des gültigen Bereichs
+        super().__init__(master, **kwargs)
+        self.configure(width=320, height=30)
+        self.bind("<Configure>", self.redraw)
+        self.bind("<ButtonPress-1>", self.on_click)
+        self.bind("<B1-Motion>", self.on_drag)
+
+    def get(self):
+        return self.value
+
+    def draw_value_text(self):
+        # Löschen des vorherigen Wertes
+        self.delete("slider_value_text")
+        # Positionsberechnung und Textzeichnung
+        slider_position_x = self.calculate_slider_x_position(self.value)
+        # Stellen Sie sicher, dass der Text sichtbar ist, indem Sie ihn ein wenig über dem Slider positionieren
+        self.create_text(slider_position_x, 28, text=f"{self.value:.2f}", fill="black", tags="slider_value_text")
+
+    def redraw(self, event=None):
+        self.delete("all")
+        self.draw_ticks()
+        self.draw_slider()
+        self.draw_value_text()  # Zeichnen Sie den Text am Ende
+
+    def draw_ticks(self):
+        canvas_width = self.winfo_width()
+        canvas_height = self.winfo_height()
+        min_value = self.min_value
+        max_value = self.max_value
+
+        tick_count = 11
+        tick_step = (max_value - min_value) / (tick_count - 1)
+
+        for i in range(tick_count):
+            tick_value = min_value + i * tick_step
+            tick_x = i * canvas_width / (tick_count - 1)
+            self.create_line(tick_x, canvas_height * 0.8, tick_x, canvas_height, fill="black")
+
+            # Überprüfen, ob der Wert größer als 1000 ist
+            if 10 ** tick_value >= 1000:
+                # Wenn ja, den Wert durch 1000 teilen und "k" anhängen
+                tick_text = f"{(10 ** tick_value) / 1000:.0f}k"
+            else:
+                # Andernfalls den Wert normal anzeigen
+                tick_text = f"{10 ** tick_value:.0f}"
+
+            self.create_text(tick_x, canvas_height * 0.2, text=tick_text, anchor="n")
+
+    def draw_slider(self):
+        canvas_width = self.winfo_width()
+        canvas_height = self.winfo_height()
+        min_value = self.min_value
+        max_value = self.max_value
+        value = self.value
+
+        slider_x = (math.log10(value) - min_value) / (max_value - min_value) * canvas_width
+        self.create_rectangle(slider_x - 5, 0, slider_x + 5, canvas_height, fill="red", outline="")
+
+    def on_click(self, event):
+        self.on_drag(event)
+
+    def on_drag(self, event):
+        canvas_width = self.winfo_width()
+        slider_x = event.x
+        slider_x = max(0, min(slider_x, canvas_width))
+        value = 10 ** (self.min_value + (slider_x / canvas_width) * (self.max_value - self.min_value))
+        self.value = value
+
+        # Löschen des vorherigen Wertes
+        self.delete("slider_value_text")
+
+        # Positionsberechnung und Textzeichnung
+        slider_position_x = self.calculate_slider_x_position(value)
+        self.create_text(slider_position_x, 10, text=f"{value:.2f}", fill="black", tags="slider_value_text")
+
+        self.redraw()
+
+    def calculate_slider_x_position(self, value):
+        canvas_width = self.winfo_width()
+        slider_position_x = (math.log10(value) - self.min_value) / (self.max_value - self.min_value) * canvas_width
+        print("Slider Position X:", slider_position_x)  # Zum Debuggen
+        return slider_position_x
+
 
 ###############
 class Synth:
@@ -165,15 +284,15 @@ if __name__ == "__main__":
 
     # Create the midi synth.
     a1 = Synth()
-    a1lp = ButLP(a1.sig(), 20000)
-    a1hp = ButHP(a1lp, freq=20)
+    a1lp = ButLP(a1.sig(), Gui_input.lp_freq_input) #! Hier freq ändern 20k-20Hz (Logarithmisch)
+    a1hp = ButHP(a1lp, freq=Gui_input.hp_freq_input) #! Hier freq ändern 20-20kHz (Logarithmisch)
     a1bp = ButBP(a1hp,freq=1000, q=5) # q ist glaube ich die breite, je höher desto stärker und schmalbandiger(glaube ich) 0 müsste aus sein
-    a1ch = Chorus(a1bp,depth=3, feedback=0.5, bal=0.3) # depth und feedback als fader, feedback max = 1
+    a1ch = Chorus(a1hp,depth=3, feedback=0.5, bal=Gui_input.bal_input) # depth und feedback als fader, feedback max = 1 #! Hier balance von 1-0
     # bal für balance dry wet 1-> kein chorus, dry
     sc = Scope(a1.sig())
 
     # Send the synth's signal into a reverb processor.
-    rev = STRev(a1ch, inpos=[0.1, 0.9], revtime=15, cutoff=4000, bal=0.15) #revtime und cutoff als fader
+    rev = STRev(a1ch, inpos=[0.1, 0.9], revtime=15, cutoff=4000, bal=0.15) #! Hier revtime 0-20 und cutoff 0-20kHz (Logarithmisch) als fader
     harm = Harmonizer(rev, transpo=-5, winsize=0.05) # dupliziert das signal und pitcht es um transpo halbtöne. 0 für aus, bis -12 runter
 
     a3 = Noisein()
