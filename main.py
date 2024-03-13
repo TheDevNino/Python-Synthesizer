@@ -1,6 +1,7 @@
 from pyo import *
 from random import random
 import tkinter as tk
+from tkinter import ttk
 from math import log10
 
 ##################
@@ -32,6 +33,7 @@ class SynthGUI:
 
         self.inputs = {}  # Dictionary zum Speichern der Eingaben
 
+        self.create_slider("Volume Synth", 0, 1, 0.01, self.right_frame)
         self.create_slider("Noise Lautstärke", 0, 1, 0.01, self.right_frame)
         self.create_toggle_button("LFO on", self.right_frame)
         self.create_slider("LFO Frequenz", 0.01, 25, 0.01, self.right_frame)
@@ -39,22 +41,42 @@ class SynthGUI:
         self.create_slider("Lautstärke tieferer Oktave", 0, 1, 0.01, self.right_frame)
         self.create_slider("Attack", 0.001, 5, 0.001, self.left_frame)
         self.create_slider("Decay", 0.05, 5, 0.05, self.left_frame)
-        self.create_slider("Release", 0.005, 5, 0.005, self.left_frame)
         self.create_slider("Sustain", 0.5, 10, 0.1, self.left_frame)
-        self.create_slider("Volume Synth", 0, 1, 0.01, self.left_frame)
+        self.create_slider("Release", 0.005, 5, 0.005, self.left_frame)
+
+        self.create_type_dropdown("Waveform Osc 1", self.left_frame)
+        self.create_slider("Sharpness Osc 1", 0, 1, 0.01,self.left_frame)
+        self.create_type_dropdown("Waveform Osc 2", self.left_frame)
+        self.create_slider("Sharpness Osc 2", 0, 1, 0.01, self.left_frame)
+
         self.create_log_slider("LP Frequenz", 20000, 20)
         self.create_log_slider("HP Frequenz", 20, 20000)
-        self.create_slider("Balance", 1, 0, 0.01, self.right_frame)
+        self.create_slider("Chorus Balance", 0, 1, 0.01, self.right_frame)
         self.create_slider("Revtime", 0, 20, 0.1, self.right_frame)
-        self.create_log_slider("Cutoff", 1, 20000)
-
+        self.create_log_slider("Reverb LP", 20000, 20) # Cutoff
 
         self.submit_button = tk.Button(self.bottom_frame, text="Eingabe", command=self.submit, bg="cyan", fg="#003C6E")
         self.submit_button.pack(pady=(20, 0))  # 20 Pixel Platz oben, 0 Pixel unten
 
+    def create_type_dropdown(self, label_text, frame):
+        label = tk.Label(frame, text=label_text)
+        label.pack(pady=2)
+
+        combo_frame = tk.Frame(self.left_frame, width=110, height=20)
+        combo_frame.pack_propagate(False)  # Verhindert, dass der Frame seine Größe automatisch anpasst
+        combo_frame.pack(pady=0)
+
+        self.combo = ttk.Combobox(combo_frame,
+                                  values=["0: Saw up", "2: Saw down", "3: Triangle", "4: Pulse", "5: Bipolar",
+                                          "6: Sample&Hold", "7: Mod. Sine"], width=50)
+        self.combo.pack()
+        # type 0 saw up 1 saw down 2 square 3 triangle 4 pulse 5 bipolar pulse 6 sample and hold 7 modulated sine
+
+        self.inputs[label_text] = self.combo
+
     def create_slider(self, label_text, min_value, max_value, res_value, frame):
         label = tk.Label(frame, text=label_text)
-        label.pack(pady=5)
+        label.pack(pady=0)
 
         slider = tk.Scale(frame, from_=min_value, to=max_value, resolution=res_value, orient=tk.HORIZONTAL)
         slider.pack()
@@ -65,7 +87,6 @@ class SynthGUI:
         label = tk.Label(self.bottom_frame, text=label_text)
         label.pack(pady=5)
 
-
         log_min = math.log10(min_value)
         log_max = math.log10(max_value)
         log_slider = LogScale(self.bottom_frame, min_value=log_min, max_value=log_max)
@@ -73,13 +94,16 @@ class SynthGUI:
         self.inputs[label_text] = log_slider
 
     def create_toggle_button(self, label_text, frame):
-        label = tk.Label(frame, text=label_text)
-        label.pack(pady=5)
+        # um .grid() unabhängig zu verwenden.
+        inner_frame = tk.Frame(frame)
+        inner_frame.pack(pady=2)  # oder positioniere es, wie es in dein Layout passt
+
+        label = tk.Label(inner_frame, text=label_text)
+        label.grid(row=0, column=0, sticky='w')
 
         var = tk.IntVar()
-
-        toggle_button = tk.Checkbutton(frame, text="", variable=var)
-        toggle_button.pack()
+        toggle_button = tk.Checkbutton(inner_frame, text="", variable=var)
+        toggle_button.grid(row=0, column=1)
 
         self.inputs[label_text] = var
 
@@ -104,7 +128,24 @@ class SynthGUI:
         self.mul_input = input_values["Volume Synth"]
         self.lp_freq_input = input_values["LP Frequenz"]
         self.hp_freq_input = input_values["HP Frequenz"]
-        self.bal_input = input_values["Balance"]
+        self.bal_input = input_values["Chorus Balance"]
+        self.revtime_input = input_values["Revtime"]
+        self.reverb_input = input_values["Reverb LP"]
+
+        def get_osc_value(input):
+            try:
+                waveform_value = input
+                first_character = waveform_value[0]
+                return int(first_character)
+            except (IndexError, ValueError) as e:
+                print(f"Fehler beim Abrufen des Oszillatorwerts! {e}")
+                return 0  # Gibt einen Standardwert zurück, wenn ein Fehler auftritt
+
+        self.osc1_input = get_osc_value(input_values["Waveform Osc 1"])
+        self.osc2_input = get_osc_value(input_values["Waveform Osc 2"])
+
+        self.sharp1_input = input_values["Sharpness Osc 1"]
+        self.sharp2_input = input_values["Sharpness Osc 2"]
 
         print(input_values)
         #self.root.destroy()
@@ -132,7 +173,14 @@ class LogScale(tk.Canvas):
         # Positionsberechnung und Textzeichnung
         slider_position_x = self.calculate_slider_x_position(self.value)
         # Stellen Sie sicher, dass der Text sichtbar ist, indem Sie ihn ein wenig über dem Slider positionieren
-        self.create_text(slider_position_x, 28, text=f"{self.value:.2f}", fill="black", tags="slider_value_text")
+        x, y = slider_position_x, 28
+        text = f"{round(int(self.value)):.2f}"
+
+        # Zuerst ein Rechteck als Hintergrund zeichnen
+        background_id = self.create_rectangle(x, y, x + 40, y - 20, fill="red", tags="slider_value_bg")
+
+        # Dann den Text über das Rechteck zeichnen
+        text_id = self.create_text(x + 20, y + -10, text=text, fill="white", tags="slider_value_text")
 
     def redraw(self, event=None):
         self.delete("all")
@@ -196,7 +244,7 @@ class LogScale(tk.Canvas):
     def calculate_slider_x_position(self, value):
         canvas_width = self.winfo_width()
         slider_position_x = (math.log10(value) - self.min_value) / (self.max_value - self.min_value) * canvas_width
-        print("Slider Position X:", slider_position_x)  # Zum Debuggen
+        #print("Slider Position X:", slider_position_x)  # Zum Debuggen
         return slider_position_x
 
 
@@ -214,8 +262,8 @@ class Synth:
 
         # Anti-aliased stereo square waves, mixed from 10 streams to 1 stream
         # to avoid channel alternation on new notes.
-        self.osc1 = LFO(self.pit, sharp=0.5, type=2, mul=self.amp).mix(1)
-        self.osc2 = LFO(self.pit * 0.997, sharp=0.5, type=4, mul=self.amp).mix(1)
+        self.osc1 = LFO(self.pit, sharp=Gui_input.sharp1_input, type=Gui_input.osc1_input, mul=self.amp).mix(1) #! Sharpness 0-1, Auswahl 0-7
+        self.osc2 = LFO(self.pit * 0.997, sharp=Gui_input.sharp2_input , type=Gui_input.osc2_input, mul=self.amp).mix(1)#! Sharpness 0-1, Auswahl 0-7
         #self.osc3 = Noise(mul=self.amp).mix(1)
         # type 0 saw up 1 saw down 2 square 3 triangle 4 pulse 5 bipolar pulse 6 sample and hold 7 modulated sine
         # Stereo mix.
@@ -292,7 +340,7 @@ if __name__ == "__main__":
     sc = Scope(a1.sig())
 
     # Send the synth's signal into a reverb processor.
-    rev = STRev(a1ch, inpos=[0.1, 0.9], revtime=15, cutoff=4000, bal=0.15) #! Hier revtime 0-20 und cutoff 0-20kHz (Logarithmisch) als fader
+    rev = STRev(a1ch, inpos=[0.1, 0.9], revtime=Gui_input.revtime_input, cutoff=Gui_input.reverb_input, bal=0.5) #!! Reverb Balance 0-1
     harm = Harmonizer(rev, transpo=-5, winsize=0.05) # dupliziert das signal und pitcht es um transpo halbtöne. 0 für aus, bis -12 runter
 
     a3 = Noisein()
@@ -316,3 +364,5 @@ if __name__ == "__main__":
         a2 = Synth(transpo=0.5, mul= Gui_input.lownote_loudness_input).out()
 
     s.gui(locals())
+
+#def start_synth():
