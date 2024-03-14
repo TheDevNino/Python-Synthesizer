@@ -26,7 +26,7 @@ def start_synth():
     sc = Scope(a1.sig())
 
     # Send the synth's signal into a reverb processor.
-    rev = STRev(a1ch, inpos=[0.1, 0.9], revtime=Gui_input.revtime_input, cutoff=Gui_input.reverb_input, bal=0.5) #!! Reverb Balance 0-1
+    rev = STRev(a1ch, inpos=[0.1, 0.9], revtime=Gui_input.revtime_input, cutoff=Gui_input.reverb_input, bal=Gui_input.revbal_input) #! Reverb Balance 0-1
     harm = Harmonizer(rev, transpo=-5, winsize=0.05) # dupliziert das signal und pitcht es um transpo halbtöne. 0 für aus, bis -12 runter
 
     a3 = Noisein()
@@ -100,6 +100,7 @@ class SynthGUI:
         self.create_slider("Chorus Balance", 0, 1, 0.01, self.right_frame)
         self.create_slider("Revtime", 0, 20, 0.1, self.right_frame)
         self.create_log_slider("Reverb LP", 20000, 20) # Cutoff
+        self.create_slider("Reverb Balance", 0,1,0.01, self.right_frame)
 
         self.submit_button = tk.Button(self.bottom_frame, text="Eingabe", command=self.submit, bg="cyan", fg="#003C6E")
         self.submit_button.pack(pady=(20, 0))  # 20 Pixel Platz oben, 0 Pixel unten
@@ -177,6 +178,7 @@ class SynthGUI:
         self.bal_input = input_values["Chorus Balance"]
         self.revtime_input = input_values["Revtime"]
         self.reverb_input = input_values["Reverb LP"]
+        self.revbal_input = input_values["Reverb Balance"]
 
         def get_osc_value(input):
             try:
