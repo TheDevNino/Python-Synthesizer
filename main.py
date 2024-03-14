@@ -352,7 +352,7 @@ class Noisein: #zum layern klingt ganz cool
         #noise on/off schalter nicht benötigt, wenn noise off -> fader auf 0 setzen.
         #noiseamp = float(input("Wert zwischen 0 und 1 für Noise Lautstärke: ")) #zwischen 0 und 1 variabel, wobei höher als 0.6 unrealistisch
 
-        print(f"noise {Gui_input.noiseamp_input}")
+        #print(f"noise {Gui_input.noiseamp_input}")
         self.osc3 = Noise(mul=self.amp_noise * Gui_input.noiseamp_input)
         # type 0 saw up 1 saw down 2 square 3 triangle 4 pulse 5 bipolar pulse 6 sample and hold 7 modulated sine
         # Stereo mix.
