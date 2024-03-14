@@ -18,24 +18,21 @@ from tkinter import ttk
 def start_synth():
     # Create the midi synth.
     a1 = Synth()
-    a1lp = ButLP(a1.sig(), Gui_input.lp_freq_input) #! Hier freq ändern 20k-20Hz (Logarithmisch)
-    a1hp = ButHP(a1lp, freq=Gui_input.hp_freq_input) #! Hier freq ändern 20-20kHz (Logarithmisch)
-    a1bp = ButBP(a1hp,freq=1000, q=5) # q ist glaube ich die breite, je höher desto stärker und schmalbandiger(glaube ich) 0 müsste aus sein
-    a1ch = Chorus(a1hp,depth=3, feedback=0.5, bal=Gui_input.bal_input) # depth und feedback als fader, feedback max = 1 #! Hier balance von 1-0
-    # bal für balance dry wet 1-> kein chorus, dry
+    # effekte
+    a1lp = ButLP(a1.sig(), Gui_input.lp_freq_input)
+    a1hp = ButHP(a1lp, freq=Gui_input.hp_freq_input)
+    a1bp = ButBP(a1hp,freq=1000, q=5)
+    a1ch = Chorus(a1hp,depth=3, feedback=0.5, bal=Gui_input.bal_input)
+    rev = STRev(a1ch, inpos=[0.1, 0.9], revtime=Gui_input.revtime_input, cutoff=Gui_input.reverb_input, bal=0.5) #!! Reverb Balance 0-1
+    harm = Harmonizer(rev, transpo=-5, winsize=0.05) # Duplicates the signal and pitches it by transpo semitones. Use 0 for off
+
     sc = Scope(a1.sig())
-
-    # Send the synth's signal into a reverb processor.
-    rev = STRev(a1ch, inpos=[0.1, 0.9], revtime=Gui_input.revtime_input, cutoff=Gui_input.reverb_input, bal=Gui_input.revbal_input) #! Reverb Balance 0-1
-    harm = Harmonizer(rev, transpo=-5, winsize=0.05) # dupliziert das signal und pitcht es um transpo halbtöne. 0 für aus, bis -12 runter
-
     a3 = Noisein()
     noiselp = ButLP(a3.sig(), freq=1500)
     noisehp = ButHP(noiselp, freq=200).mix(2)
 
     #lfouse = input("LFO JA NEIN 1: ja 0: nein: ")
     if Gui_input.lfo_active_input == 1:
-        # c = Mix([harm, noisehp], voices=2)
         d = LFO(freq= Gui_input.lfo_freq_input, sharp=0.5, type=7, mul=0.5, add=1)
         e =harm*d
         f = noisehp*d
@@ -45,7 +42,7 @@ def start_synth():
         harm.out()
         noisehp.out()
 
-    #lownote = input("lower note on/off: ")#ungefilterte note eine oktave tiefer
+    #lownote = input("lower note on/off: ")#unfiltered note one octave lower
     if Gui_input.lownote_active_input == "on":
         a2 = Synth(transpo=0.5, mul= Gui_input.lownote_loudness_input).out()
 
@@ -56,19 +53,19 @@ class SynthGUI:
         self.root = tk.Tk()
         self.root.title("Synth GUI")
         self.root.geometry("450x800")  #Größe des GUI-Fensters
-        #self.root.configure(background='white')
 
-        # Container für Spalten-Frames
+
+        # Container for column frames
         self.container = tk.Frame(self.root)
         self.container.pack(fill=tk.BOTH, expand=True)
 
-        # Erstelle Frames für die zwei Spalten und den unteren Bereich
+        # create frames for the two columns and the bottom area.
         self.top_frame = tk.Frame(self.container, height=50)# optional bg='grey'
         self.right_frame = tk.Frame(self.container)
         self.left_frame = tk.Frame(self.container)
         self.bottom_frame = tk.Frame(self.container, height=300)
 
-        # Einstellen des oberen Frames
+        # Adjusting the top frame.
         self.top_frame.place(relx=0, rely=0, relwidth=1, relheight=0.05)  # Schmaler
         self.left_frame.place(relx=0, rely=0.05, relwidth=0.5, relheight=0.675)
         self.right_frame.place(relx=0.5, rely=0.05, relwidth=0.5, relheight=0.7)
@@ -77,7 +74,7 @@ class SynthGUI:
         title = tk.Label(self.top_frame, text="Synth Einstellungen:")
         title.pack(side=tk.TOP, expand=True)
 
-        self.inputs = {}  # Dictionary zum Speichern der Eingaben
+        self.inputs = {}  # Dictionary to store the inputs
 
         self.create_slider("Volume Synth", 0, 1, 0.01, self.right_frame)
         self.create_slider("Noise Lautstärke", 0, 1, 0.01, self.right_frame)
@@ -100,24 +97,23 @@ class SynthGUI:
         self.create_slider("Chorus Balance", 0, 1, 0.01, self.right_frame)
         self.create_slider("Revtime", 0, 20, 0.1, self.right_frame)
         self.create_log_slider("Reverb LP", 20000, 20) # Cutoff
-        self.create_slider("Reverb Balance", 0,1,0.01, self.right_frame)
 
         self.submit_button = tk.Button(self.bottom_frame, text="Eingabe", command=self.submit, bg="cyan", fg="#003C6E")
-        self.submit_button.pack(pady=(20, 0))  # 20 Pixel Platz oben, 0 Pixel unten
+        self.submit_button.pack(pady=(20, 0))  # 20 Pixel space above, 0 pixels below
 
     def create_type_dropdown(self, label_text, frame):
         label = tk.Label(frame, text=label_text)
         label.pack(pady=2)
 
         combo_frame = tk.Frame(self.left_frame, width=110, height=20)
-        combo_frame.pack_propagate(False)  # Verhindert, dass der Frame seine Größe automatisch anpasst
+        combo_frame.pack_propagate(False)  # Prevents the frame from automatically resizing
         combo_frame.pack(pady=0)
 
         self.combo = ttk.Combobox(combo_frame,
                                   values=["0: Saw up", "2: Saw down", "3: Triangle", "4: Pulse", "5: Bipolar",
                                           "6: Sample&Hold", "7: Mod. Sine"], width=50)
         self.combo.pack()
-        # type 0 saw up 1 saw down 2 square 3 triangle 4 pulse 5 bipolar pulse 6 sample and hold 7 modulated sine
+
 
         self.inputs[label_text] = self.combo
 
@@ -141,9 +137,9 @@ class SynthGUI:
         self.inputs[label_text] = log_slider
 
     def create_toggle_button(self, label_text, frame):
-        # um .grid() unabhängig zu verwenden.
+        # to use .grid() independently.
         inner_frame = tk.Frame(frame)
-        inner_frame.pack(pady=2)  # oder positioniere es, wie es in dein Layout passt
+        inner_frame.pack(pady=2)  # Or position it to fit into your layout.
 
         label = tk.Label(inner_frame, text=label_text)
         label.grid(row=0, column=0, sticky='w')
@@ -178,7 +174,6 @@ class SynthGUI:
         self.bal_input = input_values["Chorus Balance"]
         self.revtime_input = input_values["Revtime"]
         self.reverb_input = input_values["Reverb LP"]
-        self.revbal_input = input_values["Reverb Balance"]
 
         def get_osc_value(input):
             try:
@@ -187,7 +182,7 @@ class SynthGUI:
                 return int(first_character)
             except (IndexError, ValueError) as e:
                 print(f"Fehler beim Abrufen des Oszillatorwerts! {e}")
-                return 0  # Gibt einen Standardwert zurück, wenn ein Fehler auftritt
+                return 0  # Returns a default value if an error occurs.
 
         self.osc1_input = get_osc_value(input_values["Waveform Osc 1"])
         self.osc2_input = get_osc_value(input_values["Waveform Osc 2"])
@@ -207,7 +202,7 @@ class LogScale(tk.Canvas):
         self.max_value = max_value
         self.min = min_value  # For calculation in on_drag
         self.max = max_value  # For calculation in on_drag
-        self.value = 10 ** min_value  # Initialisiert value mit einem sicheren Wert innerhalb des gültigen Bereichs
+        self.value = 10 ** min_value  # Initializes 'value' with a safe value within the valid range.
         super().__init__(master, **kwargs)
         self.configure(width=320, height=30)
         self.bind("<Configure>", self.redraw)
@@ -218,18 +213,18 @@ class LogScale(tk.Canvas):
         return self.value
 
     def draw_value_text(self):
-        # Löschen des vorherigen Wertes
+        # Deleting the previous value
         self.delete("slider_value_text")
-        # Positionsberechnung und Textzeichnung
+        # Position calculation and text drawing
         slider_position_x = self.calculate_slider_x_position(self.value)
-        # Stellen Sie sicher, dass der Text sichtbar ist, indem Sie ihn ein wenig über dem Slider positionieren
+        # Ensure the text is visible by positioning it slightly above the slider.
         x, y = slider_position_x, 28
         text = f"{round(int(self.value)):.2f}"
 
-        # Zuerst ein Rechteck als Hintergrund zeichnen
+        # Rectangle as background
         background_id = self.create_rectangle(x, y, x + 40, y - 20, fill="red", tags="slider_value_bg")
 
-        # Dann den Text über das Rechteck zeichnen
+        # Draws the text over the rectangle
         text_id = self.create_text(x + 20, y + -10, text=text, fill="white", tags="slider_value_text")
 
     def redraw(self, event=None):
@@ -252,12 +247,12 @@ class LogScale(tk.Canvas):
             tick_x = i * canvas_width / (tick_count - 1)
             self.create_line(tick_x, canvas_height * 0.8, tick_x, canvas_height, fill="black")
 
-            # Überprüfen, ob der Wert größer als 1000 ist
+            # Check if the value is over 1000.
             if 10 ** tick_value >= 1000:
-                # Wenn ja, den Wert durch 1000 teilen und "k" anhängen
+                # If yes, divide the value by 1000 and append "k".
                 tick_text = f"{(10 ** tick_value) / 1000:.0f}k"
             else:
-                # Andernfalls den Wert normal anzeigen
+                # Otherwise, display the value normally.
                 tick_text = f"{10 ** tick_value:.0f}"
 
             self.create_text(tick_x, canvas_height * 0.2, text=tick_text, anchor="n")
@@ -282,10 +277,10 @@ class LogScale(tk.Canvas):
         value = 10 ** (self.min_value + (slider_x / canvas_width) * (self.max_value - self.min_value))
         self.value = value
 
-        # Löschen des vorherigen Wertes
+        # Deleting the previous value
         self.delete("slider_value_text")
 
-        # Positionsberechnung und Textzeichnung
+        # Position calculation and text drawing
         slider_position_x = self.calculate_slider_x_position(value)
         self.create_text(slider_position_x, 10, text=f"{value:.2f}", fill="black", tags="slider_value_text")
 
@@ -294,7 +289,6 @@ class LogScale(tk.Canvas):
     def calculate_slider_x_position(self, value):
         canvas_width = self.winfo_width()
         slider_position_x = (math.log10(value) - self.min_value) / (self.max_value - self.min_value) * canvas_width
-        #print("Slider Position X:", slider_position_x)  # Zum Debuggen
         return slider_position_x
 
 
@@ -303,19 +297,18 @@ class Synth:
     def __init__(self, transpo=1, mul=1):
         # Transposition factor.
         self.transpo = Sig(transpo)
-        # Receive midi notes, convert pitch to Hz and manage 10 voices of polyphony.
+        # Empfange MIDI-Noten, konvertiere die Tonhöhe in Hertz und verwalte 10 Stimmen der Polyphonie.
         self.note = Notein(poly=10, scale=1, first=0, last=127)
 
         # Handle pitch and velocity (Notein outputs normalized amplitude (0 -> 1)).
         self.pit = self.note["pitch"] * self.transpo
         self.amp = MidiAdsr(self.note["velocity"], Gui_input.attack_input, Gui_input.decay_input, Gui_input.sustain_input, Gui_input.release_input, Gui_input.mul_input)
 
-        # Anti-aliased stereo square waves, mixed from 10 streams to 1 stream
+      #Anti-aliased stereo square waves, mixed from 10 streams to 1 stream
         # to avoid channel alternation on new notes.
-        self.osc1 = LFO(self.pit, sharp=Gui_input.sharp1_input, type=Gui_input.osc1_input, mul=self.amp).mix(1) #! Sharpness 0-1, Auswahl 0-7
-        self.osc2 = LFO(self.pit * 0.997, sharp=Gui_input.sharp2_input , type=Gui_input.osc2_input, mul=self.amp).mix(1)#! Sharpness 0-1, Auswahl 0-7
-        #self.osc3 = Noise(mul=self.amp).mix(1)
-        # type 0 saw up 1 saw down 2 square 3 triangle 4 pulse 5 bipolar pulse 6 sample and hold 7 modulated sine
+        self.osc1 = LFO(self.pit, sharp=Gui_input.sharp1_input, type=Gui_input.osc1_input, mul=self.amp).mix(1)
+        self.osc2 = LFO(self.pit * 0.997, sharp=Gui_input.sharp2_input , type=Gui_input.osc2_input, mul=self.amp).mix(1)
+
         # Stereo mix.
         self.mix = Mix([self.osc1, self.osc2], voices=2)
 
@@ -334,9 +327,10 @@ class Synth:
     def sig(self):
         "Returns the synth's signal for future processing."
         return self.notch
+    # class based on midi synth example in the pyo documentation
 
 ############
-class Noisein: #zum layern klingt ganz cool
+class Noisein:
     def __init__(self, transpo=1, mul=1):
         # Transposition factor.
         self.transpo = Sig(transpo)
@@ -351,12 +345,10 @@ class Noisein: #zum layern klingt ganz cool
         # Anti-aliased stereo square waves, mixed from 10 streams to 1 stream
         # to avoid channel alternation on new notes.
 
-        #noise on/off schalter nicht benötigt, wenn noise off -> fader auf 0 setzen.
-        #noiseamp = float(input("Wert zwischen 0 und 1 für Noise Lautstärke: ")) #zwischen 0 und 1 variabel, wobei höher als 0.6 unrealistisch
 
-        #print(f"noise {Gui_input.noiseamp_input}")
+        print(f"noise {Gui_input.noiseamp_input}")
         self.osc3 = Noise(mul=self.amp_noise * Gui_input.noiseamp_input)
-        # type 0 saw up 1 saw down 2 square 3 triangle 4 pulse 5 bipolar pulse 6 sample and hold 7 modulated sine
+
         # Stereo mix.
         self.mix = Mix([self.osc3], voices=2)
 
