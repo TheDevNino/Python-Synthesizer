@@ -1,10 +1,56 @@
+# PYTHON SYNTHESIZER
+#
+# Programmieren 1 Projekt
+# HAW Hamburg - Fakultät DMI
+# Studiengang Medientechnik
+#
+# Team: Erik Harder, Nino Cataffo
+# Dozent: Thorsten Wagener
+#
+# Empfehlung: Digitales MIDI-Keyboard für MacOS "Mini Keys" https://apps.apple.com/de/app/mini-keys/id1611734597?mt=12
+# GitHub Repository Link: https://github.com/TheDevNino/Python-Synthesizer.git
+
 from pyo import *
 from random import random
 import tkinter as tk
 from tkinter import ttk
-from math import log10
 
-##################
+def start_synth():
+    # Create the midi synth.
+    a1 = Synth()
+    a1lp = ButLP(a1.sig(), Gui_input.lp_freq_input) #! Hier freq ändern 20k-20Hz (Logarithmisch)
+    a1hp = ButHP(a1lp, freq=Gui_input.hp_freq_input) #! Hier freq ändern 20-20kHz (Logarithmisch)
+    a1bp = ButBP(a1hp,freq=1000, q=5) # q ist glaube ich die breite, je höher desto stärker und schmalbandiger(glaube ich) 0 müsste aus sein
+    a1ch = Chorus(a1hp,depth=3, feedback=0.5, bal=Gui_input.bal_input) # depth und feedback als fader, feedback max = 1 #! Hier balance von 1-0
+    # bal für balance dry wet 1-> kein chorus, dry
+    sc = Scope(a1.sig())
+
+    # Send the synth's signal into a reverb processor.
+    rev = STRev(a1ch, inpos=[0.1, 0.9], revtime=Gui_input.revtime_input, cutoff=Gui_input.reverb_input, bal=0.5) #!! Reverb Balance 0-1
+    harm = Harmonizer(rev, transpo=-5, winsize=0.05) # dupliziert das signal und pitcht es um transpo halbtöne. 0 für aus, bis -12 runter
+
+    a3 = Noisein()
+    noiselp = ButLP(a3.sig(), freq=1500)
+    noisehp = ButHP(noiselp, freq=200).mix(2)
+
+    #lfouse = input("LFO JA NEIN 1: ja 0: nein: ")
+    if Gui_input.lfo_active_input == 1:
+        # c = Mix([harm, noisehp], voices=2)
+        d = LFO(freq= Gui_input.lfo_freq_input, sharp=0.5, type=7, mul=0.5, add=1)
+        e =harm*d
+        f = noisehp*d
+        e.out()
+        f.out()
+    elif Gui_input.lfo_active_input  == 0:
+        harm.out()
+        noisehp.out()
+
+    #lownote = input("lower note on/off: ")#ungefilterte note eine oktave tiefer
+    if Gui_input.lownote_active_input == "on":
+        a2 = Synth(transpo=0.5, mul= Gui_input.lownote_loudness_input).out()
+
+    s.gui(locals())
+
 class SynthGUI:
     def __init__(self):
         self.root = tk.Tk()
@@ -148,7 +194,9 @@ class SynthGUI:
         self.sharp2_input = input_values["Sharpness Osc 2"]
 
         print(input_values)
-        #self.root.destroy()
+        self.root.destroy()
+
+        start_synth()
 
 
 class LogScale(tk.Canvas):
@@ -329,40 +377,3 @@ if __name__ == "__main__":
 
     Gui_input = SynthGUI()
     Gui_input.root.mainloop()
-
-    # Create the midi synth.
-    a1 = Synth()
-    a1lp = ButLP(a1.sig(), Gui_input.lp_freq_input) #! Hier freq ändern 20k-20Hz (Logarithmisch)
-    a1hp = ButHP(a1lp, freq=Gui_input.hp_freq_input) #! Hier freq ändern 20-20kHz (Logarithmisch)
-    a1bp = ButBP(a1hp,freq=1000, q=5) # q ist glaube ich die breite, je höher desto stärker und schmalbandiger(glaube ich) 0 müsste aus sein
-    a1ch = Chorus(a1hp,depth=3, feedback=0.5, bal=Gui_input.bal_input) # depth und feedback als fader, feedback max = 1 #! Hier balance von 1-0
-    # bal für balance dry wet 1-> kein chorus, dry
-    sc = Scope(a1.sig())
-
-    # Send the synth's signal into a reverb processor.
-    rev = STRev(a1ch, inpos=[0.1, 0.9], revtime=Gui_input.revtime_input, cutoff=Gui_input.reverb_input, bal=0.5) #!! Reverb Balance 0-1
-    harm = Harmonizer(rev, transpo=-5, winsize=0.05) # dupliziert das signal und pitcht es um transpo halbtöne. 0 für aus, bis -12 runter
-
-    a3 = Noisein()
-    noiselp = ButLP(a3.sig(), freq=1500)
-    noisehp = ButHP(noiselp, freq=200).mix(2)
-
-    #lfouse = input("LFO JA NEIN 1: ja 0: nein: ")
-    if Gui_input.lfo_active_input == 1:
-        # c = Mix([harm, noisehp], voices=2)
-        d = LFO(freq= Gui_input.lfo_freq_input, sharp=0.5, type=7, mul=0.5, add=1)
-        e =harm*d
-        f = noisehp*d
-        e.out()
-        f.out()
-    elif Gui_input.lfo_active_input  == 0:
-        harm.out()
-        noisehp.out()
-
-    #lownote = input("lower note on/off: ")#ungefilterte note eine oktave tiefer
-    if Gui_input.lownote_active_input == "on":
-        a2 = Synth(transpo=0.5, mul= Gui_input.lownote_loudness_input).out()
-
-    s.gui(locals())
-
-#def start_synth():
